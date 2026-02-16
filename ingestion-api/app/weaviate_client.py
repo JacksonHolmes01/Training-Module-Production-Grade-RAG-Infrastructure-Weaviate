@@ -38,7 +38,7 @@ async def ensure_schema():
         if "LabDoc" in classes:
             return
 
-        cr = await client.post(f"{WEAVIATE_BASE}/v1/schema/classes", json=schema, headers=_headers())
+        cr = await client.post(f"{WEAVIATE_BASE}/v1/schema", json=schema, headers=_headers())
         cr.raise_for_status()
 
 async def insert_doc(doc: dict):
