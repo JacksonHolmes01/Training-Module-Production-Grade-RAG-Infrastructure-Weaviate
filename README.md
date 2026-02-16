@@ -30,7 +30,7 @@ The system is intentionally layered and secured to resemble real-world deploymen
 
 ```bash
 git clone <YOUR-REPO-URL>
-cd Training-Module-Production-Grade-RAG-Infrastructure-Weviate
+cd Training-Module-Production-Grade-RAG-Infrastructure-Weaviate
 ```
 
 ## 2. Create your environment file
