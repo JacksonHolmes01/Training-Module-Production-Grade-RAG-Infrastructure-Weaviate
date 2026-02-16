@@ -38,7 +38,6 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - internal
-
  ingestion-api:
   build:
     context: ./ingestion-api
