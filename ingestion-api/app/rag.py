@@ -1,11 +1,27 @@
 import os
 import httpx
 
-from .weaviate_client import ensure_schema, WEAVIATE_BASE, _headers
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434").rstrip("/")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
 
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+async def ollama_generate(prompt: str) -> str:
+    url = f"{OLLAMA_BASE_URL}/api/generate"
 
+    payload = {
+        "model": OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "num_predict": 80,        # HARD CAP tokens (~2-3 sentences)
+            "temperature": 0.2,       # lower = less rambling
+        }
+    }
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        r = await client.post(url, json=payload)
+        r.raise_for_status()
+        data = r.json()
+        return data.get("response", "").strip()
 RAG_TOP_K = int(os.getenv("RAG_TOP_K", "5"))
 RAG_MAX_SOURCE_CHARS = int(os.getenv("RAG_MAX_SOURCE_CHARS", "1200"))
 
@@ -83,9 +99,4 @@ Instructions:
 - At the end, list which sources you used (example: "Used sources: 1, 3").
 """
 
-async def ollama_generate(prompt: str) -> str:
-    payload = {"model": OLLAMA_MODEL, "prompt": prompt, "stream": False}
-    async with httpx.AsyncClient(timeout=120) as client:
-        r = await client.post(f"{OLLAMA_BASE_URL}/api/generate", json=payload)
-        r.raise_for_status()
-        return (r.json().get("response") or "").strip()
+
