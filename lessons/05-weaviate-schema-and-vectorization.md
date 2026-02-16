@@ -30,7 +30,7 @@ So we test from inside a container on the internal Docker network.
 ### 2.1 Weaviate ready?
 
 ```bash
-docker exec -it ingestion-api python - <<'PY'
+docker exec -i ingestion-api python - <<'PY'
 import urllib.request
 print(urllib.request.urlopen("http://weaviate:8080/v1/.well-known/ready").read().decode())
 PY
@@ -39,7 +39,7 @@ PY
 ### 2.2 Vectorizer ready?
 
 ```bash
-docker exec -it ingestion-api python - <<'PY'
+docker exec -i ingestion-api python - <<'PY'
 import urllib.request
 print(urllib.request.urlopen("http://text2vec-transformers:8080/.well-known/ready").read().decode())
 PY
