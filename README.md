@@ -39,11 +39,53 @@ cd Training-Module-Production-Grade-RAG-Infrastructure-Weaviate
 cp .env.example .env
 ```
 
-Set a strong value for:
+## 2. Create your environment file
 
-```
-EDGE_API_KEY=
-```
+Copy the example environment file:
+
+    cp .env.example .env
+
+Open the newly created `.env` file in a text editor.
+
+Inside that file, you will see a line like:
+
+    EDGE_API_KEY=
+
+You must set this to a long, random string.
+
+### What is `EDGE_API_KEY`?
+
+This is a shared secret (like a password) that protects your API.
+
+In this lab:
+
+- NGINX checks for this key before allowing requests through.
+- If the key is missing or incorrect, the request is rejected.
+- This models how real production systems protect backend services.
+
+### How to generate a secure key
+
+In your terminal, run:
+
+    openssl rand -hex 32
+
+This will generate a long random string, for example:
+
+    a3f92d1e8b7c6f4d9a2e1c3b5f6a7d8c9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4
+
+Copy that entire string and paste it into your `.env` file like this:
+
+    EDGE_API_KEY=a3f92d1e8b7c6f4d9a2e1c3b5f6a7d8c9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4
+
+Save the file.
+
+Important:
+- Do NOT share this key.
+- Do NOT commit your `.env` file to GitHub.
+- Only the proxy and API need to know this value.
+
+Once this is set, your system will require that key for any API request, which is how we enforce authentication at the edge.
+
 
 ## 3. Start the stack
 
