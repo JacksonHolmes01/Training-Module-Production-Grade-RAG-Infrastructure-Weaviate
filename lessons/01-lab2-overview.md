@@ -129,8 +129,10 @@ At the end of Lab 2, you should be able to:
 
 ---
 
-## Checkpoints (what to prove)
+## Checkpoints 
 
 - You can explain what each container does in one sentence.
 - You can explain why Weaviate is not exposed to the host.
 - You can draw the RAG flow: UI → NGINX → API → (Weaviate retrieval) → (Ollama generation) → UI.
+
+[Lesson 2](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/ede1077a2201b80d0f542486f73c6690861c5f1d/lessons/02-prereqs-and-setup.md)
