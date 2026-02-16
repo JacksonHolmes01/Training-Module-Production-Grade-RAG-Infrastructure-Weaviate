@@ -124,18 +124,6 @@ That function checks the same header.
 
 ---
 
-## Step 6 — What you should include in your submission
-
-Take screenshots or record:
-
-- A `curl` call without key (shows 401)
-- A `curl` call with wrong key (shows 403)
-- A `curl` call with correct key (shows 200)
-
-This proves the boundary is working.
-
----
-
 ## Common issues & fixes
 
 - **You changed `.env` but auth still fails**  
@@ -150,9 +138,11 @@ This proves the boundary is working.
 
 ---
 
-## Checkpoints (what to prove)
+## Checkpoints 
 
 - `/health` returns 401 without a header.
 - `/health` returns 403 with an incorrect header.
 - `/health` returns 200 with the correct header.
 - You can explain why having both NGINX auth and API auth is stronger than only one.
+
+[Lesson 5](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/c579619e14d65dea648aee2a1a679755434d96d6/lessons/05-weaviate-schema-and-vectorization.md)
