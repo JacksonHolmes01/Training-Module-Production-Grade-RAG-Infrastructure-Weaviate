@@ -39,26 +39,27 @@ services:
     networks:
       - internal
 
-  ingestion-api:
-    build:
-      context: ./ingestion-api
-    container_name: ingestion-api
-    restart: unless-stopped
-    mem_limit: 1g
-    env_file:
-      - .env
-    depends_on:
-      - weaviate
-      - text2vec-transformers
-      - ollama
-    networks:
-      - internal
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/health').read(); sys.exit(0)"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-
+ingestion-api:
+  build:
+    context: ./ingestion-api
+  container_name: ingestion-api
+  restart: unless-stopped
+  mem_limit: 1g
+  env_file:
+    - .env
+  depends_on:
+    - weaviate
+    - text2vec-transformers
+    - ollama
+  networks:
+    - internal
+  command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/health').read(); sys.exit(0)"]
+    interval: 10s
+    timeout: 5s
+    retries: 20
+    
   nginx:
     image: nginx:1.27-alpine
     container_name: edge-nginx
