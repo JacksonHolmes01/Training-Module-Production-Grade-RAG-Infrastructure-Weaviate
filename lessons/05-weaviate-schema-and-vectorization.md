@@ -388,4 +388,4 @@ In real systems:
 - Retrieval must be revalidated after changes
 
 ---
-[Lesson 6](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/1e97e360c828355e4f601fea5a9d57e485a162a5/lessons/06-ingestion-api-validation-and-ingest.md)
+[Lesson 6](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/06-ingestion-api-validation-and-ingest.md)
