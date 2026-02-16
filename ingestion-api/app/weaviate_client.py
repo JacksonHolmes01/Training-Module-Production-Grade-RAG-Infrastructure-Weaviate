@@ -42,7 +42,20 @@ async def ensure_schema():
         cr.raise_for_status()
 
 async def insert_doc(doc: dict):
-    payload = {"class": "LabDoc", "properties": doc}
+    # Ensure Pydantic Url / datetime / etc become JSON-safe primitives
+    if hasattr(doc, "model_dump"):
+        doc = doc.model_dump(mode="json")
+
+    # If a dict still contains Url objects, coerce anything non-primitive to str
+    safe_doc = {}
+    for k, v in (doc or {}).items():
+        if v is None or isinstance(v, (str, int, float, bool, list, dict)):
+            safe_doc[k] = v
+        else:
+            safe_doc[k] = str(v)
+
+    payload = {"class": "LabDoc", "properties": safe_doc}
+
     async with httpx.AsyncClient(timeout=20) as client:
         r = await client.post(f"{WEAVIATE_BASE}/v1/objects", json=payload, headers=_headers())
         r.raise_for_status()
