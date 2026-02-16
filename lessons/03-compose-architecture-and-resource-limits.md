@@ -137,7 +137,7 @@ If you want a clean wipe, use the reset script (Lesson 9).
 - Weaviate: `mem_limit: 8g`
 - Ollama: `mem_limit: 8g`
 
-### Why we enforce limits (beginner-friendly explanation)
+### Why we enforce limits 
 
 If you don’t limit resources:
 
@@ -191,9 +191,11 @@ docker stats
 
 ---
 
-## Checkpoints (what to prove)
+## Checkpoints 
 
 - You can explain why most services are internal-only.
 - You can explain what the volumes store and why they matter.
 - You can point to where the 8 GB limits are set for Weaviate and Ollama.
 - You can explain what `docker stats` shows in one sentence.
+
+[Lesson 4](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/33047948ed1267f174341f67ffb8f102a9b3a1f2/lessons/04-edge-auth-with-nginx.md)
