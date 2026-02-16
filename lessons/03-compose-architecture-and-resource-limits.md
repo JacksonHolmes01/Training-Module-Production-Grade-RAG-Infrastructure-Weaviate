@@ -297,4 +297,4 @@ docker stats
 - You can point to where the 8 GB limits are set for Weaviate and Ollama.
 - You can explain what `docker stats` shows in one sentence.
 
-[Lesson 4](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/33047948ed1267f174341f67ffb8f102a9b3a1f2/lessons/04-edge-auth-with-nginx.md)
+[Lesson 4](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/04-edge-auth-with-nginx.md)
