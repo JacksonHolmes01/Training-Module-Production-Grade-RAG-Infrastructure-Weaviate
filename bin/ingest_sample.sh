@@ -1,31 +1,46 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
-if [ ! -f .env ]; then
-  echo "Missing .env. Run: cp .env.example .env"
-  exit 1
-fi
-
-EDGE_API_KEY=$(grep -E '^EDGE_API_KEY=' .env | cut -d= -f2- | tr -d '\r')
-if [ -z "$EDGE_API_KEY" ] || [ "$EDGE_API_KEY" = "change-me-to-a-long-random-string" ]; then
-  echo "Set EDGE_API_KEY in .env before ingesting."
-  exit 1
-fi
-
-FILE="data/sample_articles.jsonl"
-if [ ! -f "$FILE" ]; then
-  echo "Missing $FILE"
-  exit 1
-fi
+set -e
 
 echo "Ingesting sample docs into Weaviate via the edge proxy..."
-while IFS= read -r line; do
-  [ -z "$line" ] && continue
-  curl -sS -X POST "http://localhost:8088/ingest" \
-    -H "Content-Type: application/json" \
-    -H "X-API-Key: $EDGE_API_KEY" \
-    -d "$line" > /dev/null
-  echo "  ✓ ingested one doc"
-done < "$FILE"
 
-echo "Done."
+EDGE_API_KEY=$(grep -E '^EDGE_API_KEY=' .env | cut -d= -f2-)
+
+if [ -z "$EDGE_API_KEY" ]; then
+  echo "ERROR: EDGE_API_KEY not found in .env"
+  exit 1
+fi
+
+COUNT=0
+SUCCESS=0
+FAIL=0
+
+while IFS= read -r line
+do
+  COUNT=$((COUNT+1))
+
+  RESPONSE=$(curl -s -w "\n%{http_code}" \
+    -H "X-API-Key: $EDGE_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "$line" \
+    http://localhost:8088/ingest)
+
+  BODY=$(echo "$RESPONSE" | sed '$d')
+  STATUS=$(echo "$RESPONSE" | tail -n1)
+
+  if [ "$STATUS" -eq 200 ]; then
+    SUCCESS=$((SUCCESS+1))
+    echo "✔ Document $COUNT ingested"
+  else
+    FAIL=$((FAIL+1))
+    echo "✘ Document $COUNT failed (HTTP $STATUS)"
+    echo "$BODY"
+  fi
+
+done < data/sample_articles.jsonl
+
+echo ""
+echo "Ingest complete."
+echo "Total: $COUNT"
+echo "Success: $SUCCESS"
+echo "Failed: $FAIL"
