@@ -27,7 +27,6 @@ RAG_MAX_SOURCE_CHARS = int(os.getenv("RAG_MAX_SOURCE_CHARS", "1200"))
 
 async def retrieve_sources(query: str, k: int | None = None):
     """Retrieve top-k documents from Weaviate using nearText."""
-    await ensure_schema()
     k = k or RAG_TOP_K
 
     safe_query = query.replace('"', '\"')
