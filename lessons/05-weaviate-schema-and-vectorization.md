@@ -54,77 +54,90 @@ docker compose logs text2vec-transformers --tail=200
 
 ---
 
-## Step 3 — Guided Build: Add a New Schema Field (tags)
+## Step 3 — Guided Build: Add a New Schema Field (`tags`)
 
-Real-world datasets often include metadata for filtering and organization. In this step, you will expand your system to support a tags field. This allows us to categorize articles (e.g., "security," "tutorial," "production").
+Real-world datasets often include metadata for filtering and organization. In this step, you will expand your system to support a `tags` field.
 
 ---
 
-### 3.1 Update the Request Schema (Data Validation)
+### 3.1 Update the Request Schema (`schemas.py`)
 
-First, we must tell our FastAPI application to expect a tags field in incoming JSON requests. If we don't do this, the API will ignore the new data.
+This file defines what data your API is allowed to accept.
 
-1. Open the file: ingestion-api/app/schemas.py
-2. Locate the class: Find the class ArticleIn(BaseModel): block.
-3. Add the field: Inside the class, add the tags variable. 
+**Option A: Using a Code Editor (VS Code, etc.)**
+1.  **Open the Sidebar:** On the left side of your editor, expand the `ingestion-api` folder, then the `app` folder.
+2.  **Open the File:** Click `schemas.py`.
+3.  **Edit:** Find `class ArticleIn(BaseModel):` and add the `tags` line.
 
-Note: Ensure you have List imported from the typing module at the top of the file so Python understands the data type.
+**Option B: Using the Terminal (Nano)**
+1.  **Run this command:** `nano ingestion-api/app/schemas.py`
+2.  **Edit:** Use your arrow keys to move the cursor. Type in the change.
+3.  **Save:** Press `Ctrl + O`, then `Enter`. Press `Ctrl + X` to exit.
 
---- Python Code ---
-from typing import List, Optional
-
+--- CODE TO ADD ---
 class ArticleIn(BaseModel):
     title: str
     content: str
-    # Add the line below:
     tags: List[str] = [] 
----
+-------------------
 
 ---
 
-### 3.2 Update Weaviate Collection Definition (Database Schema)
+### 3.2 Update the Database Schema (`weaviate_client.py`)
 
-Now that the API accepts the data, Weaviate needs to know how to store it. We specify the dataType as text[] to tell Weaviate this is an array of strings.
+Now we must tell the Weaviate database to create a storage space for these tags.
 
-1. Open the file: ingestion-api/app/weaviate_client.py
-2. Locate the Properties: Find the list of properties for the LabDoc class.
-3. Add the Property: Add the following dictionary entry to the existing properties list:
+**Option A: Using a Code Editor**
+1.  In the sidebar, inside `ingestion-api/app/`, open `weaviate_client.py`.
+2.  Find the `properties` list (it currently has "title" and "content").
 
---- JSON Schema ---
+**Option B: Using the Terminal (Nano)**
+1.  **Run this command:** `nano ingestion-api/app/weaviate_client.py`
+
+
+
+--- PROPERTY TO ADD ---
 {
     "name": "tags",
     "dataType": ["text[]"],
     "description": "Metadata tags for the article"
 }
----
+-----------------------
 
 ---
 
-### 3.3 Update Sample Data
+### 3.3 Update Sample Data (`sample_articles.jsonl`)
 
-To verify the change, you need data that actually includes these tags.
+Update your test data so it actually includes the new tags.
 
-1. Open the file: data/sample_articles.jsonl
-2. Modify a Record: Add the "tags": [...] key to one or more lines. 
+**Option A: Editor Sidebar**
+1.  Navigate to the `data` folder and open `sample_articles.jsonl`.
 
-Example of a valid line:
-{"title": "Secure Deploy", "content": "Keep your keys safe.", "tags": ["security", "lab2"]}
+**Option B: Terminal (Nano)**
+1.  **Run this command:** `nano data/sample_articles.jsonl`
+
+--- EXAMPLE LINE ---
+{"title": "Example", "content": "Sample text", "tags": ["lab2", "security"]}
+--------------------
 
 ---
 
 ### 3.4 Apply and Verify Changes
 
-Because you have modified the application logic and the database structure, you must restart your containers for the changes to take effect.
+Since you modified the code, you must restart the containers.
 
-1. Open a new terminal tab:
-   - Windows/Linux: Ctrl + Shift + T
-   - macOS: Cmd + T
-2. Restart the Ingestion API:
-   docker compose restart ingestion-api
-3. Check for Errors:
-   docker compose logs -f ingestion-api
-
-If you see "Application startup complete," your schema changes were successful!
+1.  **Open a New Terminal Tab:**
+    * **Windows/Linux:** `Ctrl + Shift + T`
+    * **macOS:** `Cmd + T`
+2.  **Restart the Service:**
+    ```bash
+    docker compose restart ingestion-api
+    ```
+3.  **Check the Logs:**
+    ```bash
+    docker compose logs -f ingestion-api
+    ```
+    *If you see "Application startup complete," your changes are live!*
 
 ## Step 4 — Rebuild and re-run ingestion
 
