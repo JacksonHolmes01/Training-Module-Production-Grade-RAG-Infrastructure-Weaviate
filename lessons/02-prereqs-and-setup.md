@@ -199,4 +199,4 @@ If the UI loads but chat fails, that is normal before you pull an Ollama model (
 - `./bin/status.sh` shows services running (some may take time to become ready).
 - You can open `http://localhost:7860` and see the Gradio UI.
 
-[Lesson 3](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/633dc9ce24568803bab62c5e663e904166158872/lessons/03-compose-architecture-and-resource-limits.md)
+[Lesson 3](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/03-compose-architecture-and-resource-limits.md)
