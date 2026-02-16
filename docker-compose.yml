@@ -1,0 +1,106 @@
+version: "2.4"
+
+services:
+  weaviate:
+    image: semitechnologies/weaviate:1.25.7
+    container_name: weaviate
+    restart: unless-stopped
+    mem_limit: 8g
+    environment:
+      QUERY_DEFAULTS_LIMIT: "25"
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "false"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "text2vec-transformers"
+      ENABLE_MODULES: "text2vec-transformers"
+      TRANSFORMERS_INFERENCE_API: "http://text2vec-transformers:8080"
+      CLUSTER_HOSTNAME: "node1"
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    networks:
+      - internal
+
+  text2vec-transformers:
+    image: semitechnologies/transformers-inference:sentence-transformers-all-MiniLM-L6-v2
+    container_name: text2vec-transformers
+    restart: unless-stopped
+    mem_limit: 2g
+    environment:
+      ENABLE_CUDA: "0"
+    networks:
+      - internal
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    mem_limit: 8g
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - internal
+
+  ingestion-api:
+    build:
+      context: ./ingestion-api
+    container_name: ingestion-api
+    restart: unless-stopped
+    mem_limit: 1g
+    env_file:
+      - .env
+    depends_on:
+      - weaviate
+      - text2vec-transformers
+      - ollama
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/health').read(); sys.exit(0)"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: edge-nginx
+    restart: unless-stopped
+    mem_limit: 128m
+    ports:
+      - "8088:8088"
+    environment:
+      EDGE_API_KEY: "${EDGE_API_KEY}"
+      NGINX_ENVSUBST_TEMPLATE_DIR: /etc/nginx/templates
+    volumes:
+      - ./nginx/templates/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      - ingestion-api
+    networks:
+      - internal
+
+  gradio-ui:
+    build:
+      context: ./gradio-ui
+    container_name: gradio-ui
+    restart: unless-stopped
+    mem_limit: 512m
+    ports:
+      - "7860:7860"
+    environment:
+      API_BASE_URL: "http://nginx:8088"
+      EDGE_API_KEY: "${EDGE_API_KEY}"
+    depends_on:
+      - nginx
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:7860/').read(); sys.exit(0)"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  weaviate_data:
+  ollama_data:
