@@ -162,16 +162,115 @@ If you see performance issues:
 
 ---
 
-## Step 6 — How to adjust limits if needed (and document it)
+## Step 6 — How to adjust limits if needed 
 
-If your machine struggles, you can reduce `mem_limit` values.
+## Optional: Reducing Memory Usage (If Your Machine Struggles)
 
-Example (not required):
+If your laptop becomes slow, Docker containers restart unexpectedly, or generation hangs, your system may be running out of RAM.
 
-- set Ollama to 4 GB:
-  - change `mem_limit: 8g` → `mem_limit: 4g`
+In this lab, several services have memory limits defined in `docker-compose.yml`. You can safely lower these if needed.
 
-**If you do this, write it down in your lab submission** (good practice).
+---
+
+## Step 1 — Open `docker-compose.yml`
+
+You need to edit:
+
+```
+docker-compose.yml
+```
+
+### Option A — Using a Code Editor
+
+1. Open your project folder.
+2. Click on `docker-compose.yml` in the root directory.
+3. Scroll to the service you want to modify (for example, `ollama`).
+
+### Option B — Using the Terminal (Nano)
+
+From your project root directory:
+
+```bash
+nano docker-compose.yml
+```
+
+Use arrow keys to navigate.  
+Press `Ctrl + O` to save.  
+Press `Enter` to confirm.  
+Press `Ctrl + X` to exit.
+
+---
+
+## Step 2 — Reduce the Memory Limit
+
+Locate the service block. For example:
+
+```yaml
+ollama:
+  image: ollama/ollama:latest
+  container_name: ollama
+  restart: unless-stopped
+  mem_limit: 8g
+```
+
+To reduce memory usage, change:
+
+```yaml
+mem_limit: 8g
+```
+
+to:
+
+```yaml
+mem_limit: 4g
+```
+
+You can apply the same idea to other services if necessary:
+
+- `weaviate`
+- `text2vec-transformers`
+- `ingestion-api`
+
+Do not reduce memory too aggressively.  
+Ollama especially needs enough RAM to load the model.
+
+---
+
+## Step 3 — Apply the Changes
+
+After saving the file, you must recreate the containers:
+
+```bash
+docker compose down
+docker compose up -d --build
+```
+
+This ensures the new memory limits take effect.
+
+---
+
+## Step 4 — Verify It Worked
+
+Run:
+
+```bash
+docker stats
+```
+
+You should now see lower memory limits for the adjusted containers.
+
+---
+
+## When Should You Do This?
+
+Reduce memory limits if:
+
+- Your fan is constantly running
+- The system becomes unresponsive
+- Containers restart automatically
+- You see OOM (Out Of Memory) errors
+
+If everything is running smoothly, you do not need to change this.
 
 ---
 
