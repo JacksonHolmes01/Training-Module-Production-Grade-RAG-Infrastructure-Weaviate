@@ -38,7 +38,7 @@ To understand:
 Go to:
 
 
-[Lesson Overview](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/8b254c0bdf8ef20482d0a78049cd6b22d8f6549f/lessons/00-lesson-index.md))
+[Lesson Overview](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/8b254c0bdf8ef20482d0a78049cd6b22d8f6549f/lessons/00-lesson-index.md)
 
 
 Work through the lessons in order.
