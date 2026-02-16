@@ -1,5 +1,10 @@
 import os
 import httpx
+WEAVIATE_SCHEME = os.getenv("WEAVIATE_SCHEME", "http")
+WEAVIATE_HOST = os.getenv("WEAVIATE_HOST", "weaviate")
+WEAVIATE_PORT = os.getenv("WEAVIATE_PORT", "8080")
+WEAVIATE_BASE = f"{WEAVIATE_SCHEME}://{WEAVIATE_HOST}:{WEAVIATE_PORT}"
+
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434").rstrip("/")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
