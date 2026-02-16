@@ -39,14 +39,17 @@ services:
     networks:
       - internal
 
-  ingestion-api:
-    build:
-      context: ./ingestion-api
-    container_name: ingestion-api
-    restart: unless-stopped
-    mem_limit: 1g
-    env_file:
-      - .env
+ ingestion-api:
+  build:
+    context: ./ingestion-api
+  container_name: ingestion-api
+  restart: unless-stopped
+  mem_limit: 1g
+  env_file:
+    - .env
+  environment:
+    OLLAMA_BASE_URL: "http://ollama:11434"
+    OLLAMA_MODEL: "${OLLAMA_MODEL}"
     depends_on:
       weaviate:
         condition: service_started
