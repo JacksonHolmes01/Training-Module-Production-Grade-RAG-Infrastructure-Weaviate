@@ -13,7 +13,7 @@ By the end of this lesson, you will be able to:
 
 ## Step 1 — Open the UI
 
-Open:
+Open in a new tab:
 
 - http://localhost:7860
 
@@ -42,7 +42,6 @@ This ingests `data/sample_articles.jsonl`.
 
 Try:
 
-- “Explain defense in depth using this lab as an example.”
 - “What is the difference between authentication and authorization?”
 - “Why is exposing a database directly to the internet risky?”
 - “What should we log during an incident and why?”
@@ -50,7 +49,7 @@ Try:
 
 You should see:
 
-1) an answer  
+1) an answer (may take 60-140s) 
 2) a **Sources** section listing retrieved documents
 
 ---
@@ -103,9 +102,11 @@ If needed, pull the model again:
 
 ---
 
-## Checkpoints (what to prove)
+## Checkpoints
 
 - UI loads at `http://localhost:7860`
 - You can ask at least 3 cybersecurity questions and get answers
 - Each answer includes a Sources section
 - You can explain the request path in one sentence
+
+[Lesson 9](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/09-operations-testing-and-troubleshooting.md)
