@@ -10,6 +10,8 @@ By the end of this lesson, you will be able to:
 - Use the smoke test as a repeatable proof of system health.
 - Reset the lab safely and explain what data is deleted.
 
+Much of this lesson is a refresher over commands and debugging techniques used throughout this repo. This lesson provides a good base for future knowledge and endeavors in working with RAG chatbots and Weaviate.
+
 ---
 
 ## Step 1 — Health endpoints (fast checks)
@@ -150,21 +152,6 @@ docker start text2vec-transformers
 
 ---
 
-## Step 5 — Write a mini incident note (graded writing + ops)
-
-For each drill, write 5–8 sentences:
-
-- What broke?
-- What symptom did the user see?
-- What did `/health` say?
-- What did logs show?
-- What fix did you apply?
-- How did you verify recovery?
-
-This mirrors real-world operations work.
-
----
-
 ## Step 6 — Reset vs stop (don’t accidentally delete your work)
 
 Stop containers (keeps data/models):
@@ -202,9 +189,6 @@ Full wipe (deletes Weaviate data + Ollama models):
 
 ---
 
-## Checkpoints (what to prove)
-
-- You can run the smoke test successfully.
-- You completed at least 2 failure drills and wrote incident notes.
+## Checkpoints 
 - You can explain the dependency chain (UI → proxy → API → Weaviate/Ollama).
 - You can reset the lab and explain exactly what was deleted.
