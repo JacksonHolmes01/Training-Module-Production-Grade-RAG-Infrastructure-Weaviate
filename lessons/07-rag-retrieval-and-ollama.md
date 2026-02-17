@@ -339,7 +339,7 @@ Carefully inspect the `"prompt"` field.
 
 You should see:
 
-### 1. Clear Instruction Block
+### 4.1. Clear Instruction Block
 
 ```
 You are a helpful assistant answering questions using ONLY the provided sources.
@@ -350,7 +350,7 @@ This is your grounding enforcement.
 
 ---
 
-### 2. User Question Section
+### 4.2. User Question Section
 
 ```
 User question:
@@ -361,7 +361,7 @@ If this is missing, your prompt builder is broken.
 
 ## How to Fix It (If your prompt builder is not broken skip this step)
 
-### 1. Open the Prompt Builder File
+### 4.21. Open the Prompt Builder File
 
 Using a code editor:
 - Open `ingestion-api/app/rag.py`
@@ -375,7 +375,7 @@ nano ingestion-api/app/rag.py
 
 ---
 
-### 2. Verify `build_prompt()` Is Structurally Correct
+### 4.22. Verify `build_prompt()` Is Structurally Correct
 
 Inside `build_prompt()`, confirm that it:
 
@@ -427,7 +427,7 @@ Instructions:
 
 ---
 
-### 3. Rebuild the API
+### 4.23. Rebuild the API
 
 After saving changes:
 
@@ -437,7 +437,7 @@ docker compose up -d --build ingestion-api
 
 ---
 
-### 4. Re-test Prompt Inspection
+### 4.24. Re-test Prompt Inspection
 
 ```bash
 curl -sS -X POST "http://localhost:8088/debug/prompt" \
