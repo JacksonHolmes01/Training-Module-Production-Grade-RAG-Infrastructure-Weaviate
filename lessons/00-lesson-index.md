@@ -11,5 +11,6 @@ Follow lessons in order. Each lesson explains **what you are building**, **why i
 7. [Lesson 7 — RAG Chat (retrieve → generate with Ollama)](07-rag-retrieval-and-ollama.md)
 8. [Lesson 8 — Use the Chat UI (Gradio)](08-gradio-chat-ui.md)
 9. [Lesson 9 — Operations & Troubleshooting (health, logs, reset)](09-operations-testing-and-troubleshooting.md)
+10.[Lesson 10 - Conclusion](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/10-Conclusion.md) 
 
 **Dataset:** `data/sample_articles.jsonl` (cybersecurity-focused) ingested via `./bin/ingest_sample.sh`.
