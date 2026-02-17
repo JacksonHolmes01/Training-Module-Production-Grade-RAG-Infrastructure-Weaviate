@@ -15,6 +15,19 @@ By the end of this lesson, you will be able to:
 
 Open `docker-compose.yml` in a text editor and skim the structure.
 
+### Option A — Code Editor (VS Code or similar)
+
+- Open the project folder.
+- In the file explorer, click `docker-compose.yml`.
+
+### Option B — Terminal (Nano)
+
+From the root of the repository, run:
+
+```bash
+nano docker-compose.yml
+```
+
 You will see:
 
 - `services:` — each container we run
