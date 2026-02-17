@@ -124,12 +124,6 @@ curl -i -X POST "http://localhost:8088/ingest" \
 Expected:
 - HTTP `422 Unprocessable Entity`
 
-### What to write down
-
-- What field failed?
-- Why did it fail?
-- Why is failing early safer than storing bad data?
-
 ---
 
 ## Step 6 — Ingest the sample dataset (recommended)
@@ -144,7 +138,7 @@ Run:
 ./bin/ingest_sample.sh
 ```
 
-You should see multiple “✓ ingested one doc” lines.
+You should see multiple “Documnet Ingested” lines.
 
 ---
 
@@ -180,7 +174,7 @@ docker compose logs text2vec-transformers --tail=200
 
 ---
 
-## Step 8 — Run the smoke test (repeatable grading proof)
+## Step 8 — Run the smoke test 
 
 This repo includes a smoke test script that demonstrates:
 
@@ -189,7 +183,7 @@ This repo includes a smoke test script that demonstrates:
 - ingest works
 - retrieval works
 - prompt build works
-- chat works
+- chat works (may take longer than the others)
 
 Run:
 
@@ -201,9 +195,102 @@ If it passes, you have strong evidence the system is working.
 
 ---
 
-## Checkpoints (what to prove)
+## If `chat` Hangs or Times Out
+
+The `/chat` endpoint is the slowest operation because it performs multiple steps:
+
+1. Retrieval from Weaviate  
+2. Prompt construction  
+3. Local LLM generation via Ollama  
+
+If `chat` appears to hang, isolate the failing stage using the debug endpoints below.
+
+---
+
+### 1. Verify Retrieval Works (Fast)
+
+```bash
+curl -sS -G "http://localhost:8088/debug/retrieve" \
+  -H "X-API-Key: $EDGE_API_KEY" \
+  --data-urlencode "q=CIA triad" | python -m json.tool
+```
+
+If this fails, check:
+
+```bash
+docker compose logs weaviate --tail=200
+docker compose logs text2vec-transformers --tail=200
+```
+
+---
+
+### 2. Verify Prompt Construction Works
+
+```bash
+curl -sS -X POST "http://localhost:8088/debug/prompt" \
+  -H "X-API-Key: $EDGE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"What is the CIA triad?"}' | python -m json.tool
+```
+
+If this fails, your retrieval layer or prompt builder has an issue.
+
+---
+
+### 3. Test Ollama Directly (Generation Only)
+
+```bash
+curl -sS -X POST "http://localhost:8088/debug/ollama" \
+  -H "X-API-Key: $EDGE_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Explain the CIA triad in 2 sentences."}' | python -m json.tool
+```
+
+If this hangs:
+
+- Your model may be too large for available RAM  
+- The model may not be pulled  
+- Ollama may be restarting  
+
+Check:
+
+```bash
+docker compose logs ollama --tail=200
+docker exec -it ollama ollama list
+```
+
+---
+
+### 4. Check API Logs
+
+```bash
+docker compose logs ingestion-api --tail=200
+```
+
+Look for:
+- Timeouts  
+- NameErrors  
+- Connection errors  
+- 500 responses  
+
+---
+
+### 5. Common Causes of Slow Chat
+
+- Large model (e.g., 8B) on limited RAM  
+- Extremely long prompts  
+- Too many retrieved documents  
+- Insufficient Docker memory allocation  
+
+If retrieval and prompt work but generation is slow, the issue is almost always model size or available memory.
+
+---
+
+## Checkpoints 
 
 - You can ingest one document with curl and get `200`.
 - You can intentionally trigger a `422` validation error and explain it.
 - `debug/retrieve` returns at least 1 source after ingestion.
 - `./bin/smoke_test.sh` completes successfully.
+
+[Lesson 7](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/07-rag-retrieval-and-ollama.md)
