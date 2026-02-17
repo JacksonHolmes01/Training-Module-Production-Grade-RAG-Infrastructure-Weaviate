@@ -148,7 +148,7 @@ curl -sS -i --max-time 60 \
 
 When `/chat` receives a request, the system executes these steps:
 
-### 1. NGINX (Edge Layer)
+### 2.21. NGINX (Edge Layer)
 
 - Receives the HTTP request on port `8088`
 - Verifies the `X-API-Key`
@@ -159,7 +159,7 @@ This prevents direct access to the API container.
 
 ---
 
-### 2. FastAPI (Application Layer)
+### 2.22. FastAPI (Application Layer)
 
 - Verifies the API key again (defense in depth)
 - Validates the request schema (`ChatIn`)
@@ -169,7 +169,7 @@ This is where orchestration happens.
 
 ---
 
-### 3. Weaviate (Retrieval Layer)
+### 2.23. Weaviate (Retrieval Layer)
 
 - Receives a semantic search query
 - Uses vector embeddings to find meaning-based matches
@@ -180,7 +180,7 @@ This step answers:
 
 ---
 
-### 4. Prompt Construction
+### 2.24. Prompt Construction
 
 The API builds a structured prompt containing:
 
@@ -192,7 +192,7 @@ This is the **grounding mechanism** that prevents hallucination.
 
 ---
 
-### 5. Ollama (Generation Layer)
+### 2.25. Ollama (Generation Layer)
 
 - Receives the fully constructed prompt
 - Runs the local LLM (e.g., `llama3.2:1b`)
@@ -203,7 +203,7 @@ This step transforms context into natural language output.
 
 ---
 
-### 6. Response Returned to the User
+### 2.26. Response Returned to the User
 
 The API responds with:
 
@@ -456,7 +456,7 @@ Then your prompt builder is fixed and RAG grounding will work correctly
 
 ---
 
-## Step 3 — Understanding the Sources Section (Next Step)
+## Step 5 — Understanding the Sources Section (Next Step)
 
 This step is about verifying that retrieval is actually working before you ever involve the LLM.
 
@@ -471,7 +471,7 @@ curl -sS -X POST "http://localhost:8088/debug/prompt" \
 
 ---
 
-## What Happens Internally During Step 3
+## What Happens Internally During Step 5
 
 When `/debug/prompt` runs, the following sequence happens:
 
@@ -583,7 +583,7 @@ Then restart the ingestion API.
 
 ---
 
-## Why Step 3 Is So Important
+## Why Step 5 Is So Important
 
 Many assume:
 
@@ -610,7 +610,7 @@ Only after this is correct should you debug generation.
 
 ---
 
-## Step 4 — Call Full Chat (Retrieval + Generation)
+## Step 6 — Call Full Chat (Retrieval + Generation)
 
 This step runs your **entire RAG pipeline in production mode**. Unlike the debug endpoints, `/chat` executes all layers together:
 
@@ -695,7 +695,7 @@ If all three succeed but `/chat` fails, the issue is orchestration (timeouts, as
 
 This step verifies that all layers operate together under real conditions.
 
-## Step 5 — Tune RAG_TOP_K and observe changes (hands-on experiment)
+## Step 7 — Tune RAG_TOP_K and observe changes (hands-on experiment)
 
 `RAG_TOP_K` controls how many documents are retrieved.
 
