@@ -5,7 +5,7 @@ This repository is **Lab 2** in a two-part sequence.
 - Lab 1: Secure single-node Weaviate fundamentals  
 - Lab 2 (this repository): Build a multi-service Retrieval-Augmented Generation (RAG) chatbot using Weaviate, Ollama, FastAPI, NGINX, and Gradio.
 
-You will not just run a chatbot — you will understand how it is architected, secured, and operated.
+You will not just run a chatbot, you will understand how it is built, secured, and operated.
 
 ---
 
