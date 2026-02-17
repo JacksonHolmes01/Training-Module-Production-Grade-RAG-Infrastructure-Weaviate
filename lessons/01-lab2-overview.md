@@ -15,7 +15,7 @@ By the end of this lesson, you will be able to:
 
 In **Lab 1**, you deployed Weaviate securely and validated the basics: authentication, RBAC, lifecycle operations, backups, start/stop commands, etc.
 
-That’s the foundation — but in the real world, Weaviate is usually not “the product.” It is an internal part of a bigger application.
+That’s the foundation, but in the real world, Weaviate is usually not “the product.” It is an internal part of a bigger application.
 
 In **Lab 2**, we build something that feels like a real application:
 
