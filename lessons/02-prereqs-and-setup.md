@@ -96,6 +96,16 @@ cp .env.example .env
 
 Open `.env` and change this:
 
+## Editing the `.env` File with Nano
+
+To edit your environment configuration file, use the Nano text editor.
+
+From the root of the project directory, run:
+
+```bash
+nano .env
+```
+
 - `EDGE_API_KEY=change-me-to-a-long-random-string`
 
 Make it a long random value.
@@ -110,6 +120,17 @@ PY
 ```
 
 Paste the output into `.env`.
+
+### Save the File in Nano
+
+After making your changes:
+
+1. Press `Ctrl + O` (hold Control and press the letter **O**)  
+   - Nano will show: `File Name to Write: .env`
+
+2. Press `Enter` to confirm and save.
+
+You should see a message at the bottom confirming that the file was written.
 
 ---
 
