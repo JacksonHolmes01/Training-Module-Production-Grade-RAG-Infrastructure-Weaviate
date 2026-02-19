@@ -214,7 +214,7 @@ The client (curl or Gradio UI) displays the result.
 
 ---
 
-## Step 3 — Debug retrieval first (no LLM)
+## Step 3 — Debug retrieval first (no LLM) 
 
 RAG has two major phases:
 
