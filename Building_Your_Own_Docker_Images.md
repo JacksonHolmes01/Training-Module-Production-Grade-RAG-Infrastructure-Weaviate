@@ -1,6 +1,6 @@
 # Building Your Own Docker Images (Textbook-Style + Step-by-Step Labs)
 
-This document teaches you **how to create Docker images**, not just what they are. It is meant to be read like a chapter of a textbook, and then followed like a lab manual.
+This document teaches you **how to create Docker images**, not just what they are.
 
 ---
 
