@@ -1,4 +1,4 @@
-# Lesson 9 — Operations: Runbooks, Failure Drills, and Debugging Like an Engineer
+# Lesson 9 — Operations: Runbooks, Failure Drills, and Debugging 
 
 ## Learning objectives
 
