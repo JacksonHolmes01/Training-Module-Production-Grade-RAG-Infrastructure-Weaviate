@@ -1,10 +1,6 @@
 # Lesson 10 — Conclusion
 
-This lesson is not soley about writing new code.
-
-It is about understanding, at a systems level, what you built, how the pieces interact, and why the architecture was designed this way.
-
-If you can explain this lesson clearly without looking at the repository, you understand the lab.
+It is about understanding, what you built, how the pieces interact, and why the architecture was designed this way.
 
 ---
 
