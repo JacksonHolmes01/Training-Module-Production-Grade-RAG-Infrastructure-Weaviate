@@ -193,4 +193,4 @@ Full wipe (deletes Weaviate data + Ollama models):
 - You can explain the dependency chain (UI → proxy → API → Weaviate/Ollama).
 - You can reset the lab and explain exactly what was deleted.
 
-[Conclusion](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/10-Conclusion.md)
+[Conclusion](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/10-conclusion.md))
