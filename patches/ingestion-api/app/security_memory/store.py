@@ -6,13 +6,28 @@ import httpx
 
 from .schemas import MemoryQueryIn, MemoryQueryOut, MemoryChunk, MemoryHealthOut
 
-WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://weaviate:8080").rstrip("/")
+# Match weaviate_client.py: build URL from the same 3 env vars used by the rest of the app
+_WEAVIATE_SCHEME = os.getenv("WEAVIATE_SCHEME", "http")
+_WEAVIATE_HOST   = os.getenv("WEAVIATE_HOST", "weaviate")
+_WEAVIATE_PORT   = os.getenv("WEAVIATE_PORT", "8080")
+WEAVIATE_URL     = f"{_WEAVIATE_SCHEME}://{_WEAVIATE_HOST}:{_WEAVIATE_PORT}"
+
+# Weaviate auth — matches docker-compose AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "false"
+_WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY", "")
+
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434").rstrip("/")
 
 SECURITY_CLASS = os.getenv("SECURITY_CLASS", "ExpandedVSCodeMemory")
 SECURITY_TOP_K = int(os.getenv("SECURITY_TOP_K", "6"))
 SECURITY_EMBED_MODEL = os.getenv("SECURITY_EMBED_MODEL", "nomic-embed-text")
 SECURITY_EMBED_DIM = int(os.getenv("SECURITY_EMBED_DIM", "768"))
+
+
+def _weaviate_headers() -> dict:
+    """Return auth headers if WEAVIATE_API_KEY is set, otherwise empty dict."""
+    if _WEAVIATE_API_KEY:
+        return {"Authorization": f"Bearer {_WEAVIATE_API_KEY}"}
+    return {}
 
 
 async def _embed(texts: List[str]) -> List[List[float]]:
@@ -31,8 +46,9 @@ async def _embed(texts: List[str]) -> List[List[float]]:
 
 async def _ensure_class() -> None:
     """Create the Weaviate class schema if it does not already exist."""
+    hdrs = _weaviate_headers()
     async with httpx.AsyncClient(timeout=15.0) as client:
-        r = await client.get(f"{WEAVIATE_URL}/v1/schema/{SECURITY_CLASS}")
+        r = await client.get(f"{WEAVIATE_URL}/v1/schema/{SECURITY_CLASS}", headers=hdrs)
         if r.status_code == 200:
             return
         schema = {
@@ -48,20 +64,21 @@ async def _ensure_class() -> None:
                 {"name": "chunk_index", "dataType": ["int"]},
             ],
         }
-        cr = await client.post(f"{WEAVIATE_URL}/v1/schema", json=schema)
+        cr = await client.post(f"{WEAVIATE_URL}/v1/schema", json=schema, headers=hdrs)
         cr.raise_for_status()
 
 
 async def memory_health() -> MemoryHealthOut:
     await _ensure_class()
+    hdrs = _weaviate_headers()
     async with httpx.AsyncClient(timeout=10.0) as client:
         # Weaviate readiness check
-        hz = await client.get(f"{WEAVIATE_URL}/v1/.well-known/ready")
+        hz = await client.get(f"{WEAVIATE_URL}/v1/.well-known/ready", headers=hdrs)
         ok = hz.status_code == 200
 
         # Count objects in class via GraphQL aggregate
         gql = {"query": f"{{ Aggregate {{ {SECURITY_CLASS} {{ meta {{ count }} }} }} }}"}
-        count_resp = await client.post(f"{WEAVIATE_URL}/v1/graphql", json=gql)
+        count_resp = await client.post(f"{WEAVIATE_URL}/v1/graphql", json=gql, headers=hdrs)
         object_count: Optional[int] = None
         if count_resp.status_code == 200:
             try:
@@ -136,6 +153,7 @@ async def query_memory(payload: MemoryQueryIn) -> MemoryQueryOut:
         r = await client.post(
             f"{WEAVIATE_URL}/v1/graphql",
             json={"query": graphql_query},
+            headers=_weaviate_headers(),
         )
         r.raise_for_status()
         data = r.json()
