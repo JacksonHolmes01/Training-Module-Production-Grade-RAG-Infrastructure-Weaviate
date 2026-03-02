@@ -8,7 +8,7 @@ It reads:
     security-memory/data/
 
 Requirements:
-- WEAVIATE_URL points to weaviate service (default: http://weaviate:8080)
+- WEAVIATE_HOST / WEAVIATE_PORT / WEAVIATE_SCHEME match the docker-compose service (default: weaviate:8080)
 - OLLAMA_BASE_URL points to ollama service (default: http://ollama:11434)
 - SECURITY_EMBED_MODEL is pulled in Ollama (default: nomic-embed-text)
 """
@@ -21,8 +21,19 @@ from typing import List, Dict, Any
 
 import httpx
 
-WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://weaviate:8080").rstrip("/")
+WEAVIATE_SCHEME = os.getenv("WEAVIATE_SCHEME", "http")
+WEAVIATE_HOST   = os.getenv("WEAVIATE_HOST", "weaviate")
+WEAVIATE_PORT   = os.getenv("WEAVIATE_PORT", "8080")
+WEAVIATE_URL    = f"{WEAVIATE_SCHEME}://{WEAVIATE_HOST}:{WEAVIATE_PORT}"
+WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY", "")
+
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434").rstrip("/")
+
+
+def _weaviate_headers() -> dict:
+    if WEAVIATE_API_KEY:
+        return {"Authorization": f"Bearer {WEAVIATE_API_KEY}"}
+    return {}
 
 SECURITY_CLASS = os.getenv("SECURITY_CLASS", "ExpandedVSCodeMemory")
 SECURITY_CHUNK_CHARS = int(os.getenv("SECURITY_CHUNK_CHARS", "1200"))
@@ -30,7 +41,7 @@ SECURITY_CHUNK_OVERLAP = int(os.getenv("SECURITY_CHUNK_OVERLAP", "200"))
 SECURITY_EMBED_MODEL = os.getenv("SECURITY_EMBED_MODEL", "nomic-embed-text")
 SECURITY_EMBED_DIM = int(os.getenv("SECURITY_EMBED_DIM", "768"))
 
-DATA_DIR = Path(os.getenv("SECURITY_DATA_DIR", "security-memory/data"))
+DATA_DIR = Path(os.getenv("SECURITY_DATA_DIR", "/securitymemory/data"))
 
 TAG_KEYS = [
     "nist", "cis", "mitre", "owasp", "docker", "kubernetes",
@@ -88,8 +99,9 @@ async def _embed(texts: List[str]) -> List[List[float]]:
 
 async def _ensure_class() -> None:
     """Create the Weaviate class if it does not already exist."""
+    hdrs = _weaviate_headers()
     async with httpx.AsyncClient(timeout=15.0) as client:
-        r = await client.get(f"{WEAVIATE_URL}/v1/schema/{SECURITY_CLASS}")
+        r = await client.get(f"{WEAVIATE_URL}/v1/schema/{SECURITY_CLASS}", headers=hdrs)
         if r.status_code == 200:
             print(f"[security-memory] class '{SECURITY_CLASS}' already exists")
             return
@@ -106,7 +118,7 @@ async def _ensure_class() -> None:
                 {"name": "chunk_index", "dataType": ["int"]},
             ],
         }
-        cr = await client.post(f"{WEAVIATE_URL}/v1/schema", json=schema)
+        cr = await client.post(f"{WEAVIATE_URL}/v1/schema", json=schema, headers=hdrs)
         cr.raise_for_status()
         print(f"[security-memory] created class '{SECURITY_CLASS}'")
 
@@ -125,7 +137,11 @@ async def _upsert(objects: List[Dict[str, Any]]) -> None:
         ]
     }
     async with httpx.AsyncClient(timeout=90.0) as client:
-        r = await client.post(f"{WEAVIATE_URL}/v1/batch/objects", json=batch_payload)
+        r = await client.post(
+            f"{WEAVIATE_URL}/v1/batch/objects",
+            json=batch_payload,
+            headers=_weaviate_headers(),
+        )
         r.raise_for_status()
 
 
