@@ -28,17 +28,15 @@ This transforms the lab from "RAG demo" into a security-aware development enviro
 A separate Weaviate class (`ExpandedVSCodeMemory`) that stores:
 
 - Vector embeddings of security framework content
-- Structured metadata (title, source, tags, doc_path, chunk index)
+- Structured properties (title, source, tags, doc_path, chunk_index)
 - Clean, chunked markdown/text documents
 
 This ensures:
 - Retrieval is scoped and auditable
-- Lab demo documents remain separate from the security corpus
+- Lab demo documents remain separate from security corpus
 - Memory can scale independently
 
-> **Weaviate note:** Weaviate uses **classes** instead of Qdrant's **collections**. The concept is identical — a named, typed schema that holds objects and their vectors.
-
----
+> **Weaviate terminology:** Weaviate uses **classes** (equivalent to Qdrant collections or database tables). The `ExpandedVSCodeMemory` class is created automatically during ingestion if it does not exist.
 
 ### 2. A Secure FastAPI Retrieval Tool
 
@@ -50,18 +48,17 @@ POST /memory/query
 
 These endpoints:
 - Enforce API key authentication via NGINX
-- Embed the user's query via Ollama (`nomic-embed-text`)
-- Search the Weaviate `ExpandedVSCodeMemory` class using nearVector
+- Embed the user's query via **Ollama** (`nomic-embed-text`)
+- Search Weaviate using a `nearVector` GraphQL query
 - Return relevant security chunks
-- Support optional tag filtering (cis, nist, mitre, owasp, etc.)
+- Support optional tag filtering (`cis`, `nist`, `mitre`, `owasp`, etc.)
 
-This enables IDE tooling and structured security review workflows.
-
----
+> **Weaviate note:** Unlike Qdrant's REST search endpoint, Weaviate uses a GraphQL API for vector similarity queries. The response shape exposed to students is identical.
 
 ### 3. A Structured Dataset Layout
 
 Security content must live in:
+
 ```
 security-memory/
   data/
@@ -83,8 +80,6 @@ If your downloaded datasets are JSON:
 - Avoid ingesting raw STIX relationship objects
 
 Feel free to add datasets related to cybersecurity to improve your chatbot!
-
----
 
 ### 4. Three Structured Lessons
 
@@ -113,31 +108,37 @@ Students will:
 - Perform grounded review of Dockerfiles, docker-compose, NGINX configs, and API authentication logic
 - Propose minimal diffs that preserve lab functionality
 
+Now go to the additional lessons!
+
+[Lesson 1](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/04-security-memory/01-building-security-memory.md)
+
 ---
 
-## Now go to the additional lessons!
-
-## Lesson 1 Activation Steps *(If you understand these concepts already)*
+## Activation Steps (If you understand these concepts already)
 
 > **Warning:** Skipping the lessons will prevent your chatbot from having `/chat` functionality!
 
-**Rebuild ingestion API:**
+**Step 1 — Rebuild ingestion API:**
 ```bash
 docker compose up -d --build ingestion-api
 ```
 
-**Ingest memory corpus:**
+**Step 2 — Ingest memory corpus:**
 ```bash
 docker exec -i ingestion-api python -m app.security_memory.ingest
 ```
 
-**Test:**
+> Ingestion uses Ollama (`nomic-embed-text`) to embed each chunk. This can take several minutes to over an hour depending on corpus size. Monitor with `docker stats` or `docker logs -f ingestion-api`.
+
+**Step 3 — Test:**
 ```bash
 EDGE_API_KEY=$(grep -E '^EDGE_API_KEY=' .env | cut -d= -f2-)
 
+# Health check
 curl -sS -H "X-API-Key: $EDGE_API_KEY" \
   http://localhost:8088/memory/health | python -m json.tool
 
+# Query
 curl -sS -X POST http://localhost:8088/memory/query \
   -H "Content-Type: application/json" \
   -H "X-API-Key: $EDGE_API_KEY" \
@@ -145,11 +146,21 @@ curl -sS -X POST http://localhost:8088/memory/query \
   | python -m json.tool
 ```
 
+**Expected health response:**
+```json
+{
+  "ok": true,
+  "class": "ExpandedVSCodeMemory",
+  "weaviate_url": "http://weaviate:8080",
+  "object_count": 142
+}
+```
+
 ---
 
-## Optional Gradio UI fix
+## Optional Gradio UI Fix
 
-If your UI crashed with:
+If your UI crashed with any of these errors:
 - `ValueError: could not convert string to float: ''`
 - `NameError: name 'gr' is not defined`
 - `ReadTimeout` errors
@@ -159,29 +170,29 @@ Replace your UI `app.py` with:
 patches/gradio-ui/app.py
 ```
 
-Then rebuild UI:
+Then rebuild the UI:
 ```bash
 docker compose up -d --build gradio-ui
-```
 ```
 
 ---
 
-## 4. Folder structure to create
+## Verifying Weaviate Directly
 
-These folders need to exist (they can be empty placeholders to start, students populate them with datasets):
+To confirm the class exists and has objects:
+
+```bash
+# Check class schema
+curl -sS http://localhost:8080/v1/schema/ExpandedVSCodeMemory | python -m json.tool
+
+# Count objects
+curl -sS -X POST http://localhost:8080/v1/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ Aggregate { ExpandedVSCodeMemory { meta { count } } } }"}' \
+  | python -m json.tool
 ```
-security-memory/
-  data/
-    cis/           ← CIS Controls markdown files go here
-    mitre_attack/  ← MITRE ATT&CK technique files go here
-    mitre_capec/   ← MITRE CAPEC pattern files go here
-    nist/          ← NIST CSF files go here
-    owasp/         ← OWASP Top 10 files go here
-  docs/
-  mcp/
-  prompts/
-  scripts/
-  slides/
-patches/
-  gradio-ui/       ← patched app.py goes here
+
+To delete the class and start fresh (e.g., after changing the embedding model):
+```bash
+curl -X DELETE http://localhost:8080/v1/schema/ExpandedVSCodeMemory
+```
