@@ -38,6 +38,7 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - internal
+
   ingestion-api:
     build:
       context: ./ingestion-api
@@ -47,8 +48,28 @@ services:
     env_file:
       - .env
     environment:
+      # Core services
       OLLAMA_BASE_URL: "http://ollama:11434"
       OLLAMA_MODEL: "${OLLAMA_MODEL}"
+      WEAVIATE_SCHEME: "http"
+      WEAVIATE_HOST: "weaviate"
+      WEAVIATE_PORT: "8080"
+
+      # Embeddings: Ollama (ARM-safe, no extra container for security memory)
+      EMBEDDINGS_PROVIDER: "weaviate"  # LabDoc uses Weaviate's built-in text2vec
+      OLLAMA_EMBED_MODEL: "${OLLAMA_EMBED_MODEL:-nomic-embed-text}"
+
+      # ✅ Security memory corpus location (inside container)
+      SECURITY_DATA_DIR: "/securitymemory/data"
+      SECURITY_CLASS: "ExpandedVSCodeMemory"
+      SECURITY_TOP_K: "6"
+      SECURITY_CHUNK_CHARS: "1200"
+      SECURITY_CHUNK_OVERLAP: "200"
+      SECURITY_EMBED_MODEL: "${SECURITY_EMBED_MODEL:-nomic-embed-text}"
+      SECURITY_EMBED_DIM: "${SECURITY_EMBED_DIM:-768}"
+    volumes:
+      # ✅ Mount host security corpus into container (read-only)
+      - ./security-memory/data:/securitymemory/data:ro
     depends_on:
       - weaviate
       - text2vec-transformers
@@ -57,10 +78,10 @@ services:
       - internal
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-level debug
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/health').read(); sys.exit(0)"]
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:8000/health', timeout=5).read(); sys.exit(0)"]
       interval: 10s
       timeout: 5s
-      retries: 20
+      retries: 30
 
   nginx:
     image: nginx:1.27-alpine
@@ -91,16 +112,17 @@ services:
     environment:
       API_BASE_URL: "http://edge-nginx:8088"
       EDGE_API_KEY: "${EDGE_API_KEY}"
+      GRADIO_HTTP_TIMEOUT_S: "600"
     depends_on:
       nginx:
         condition: service_started
     networks:
       - internal
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:7860/').read(); sys.exit(0)"]
+      test: ["CMD", "python", "-c", "import urllib.request,sys; urllib.request.urlopen('http://localhost:7860/', timeout=5).read(); sys.exit(0)"]
       interval: 15s
       timeout: 5s
-      retries: 20
+      retries: 30
 
 networks:
   internal:
