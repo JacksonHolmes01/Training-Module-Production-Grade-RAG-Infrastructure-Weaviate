@@ -10,6 +10,7 @@ from fastapi.responses import PlainTextResponse
 from .schemas import ArticleIn, ChatIn
 from .weaviate_client import ready, ensure_schema, insert_doc
 from .rag import retrieve_sources, build_prompt, ollama_generate
+from .security_memory.router import router as memory_router
 
 
 # -----------------------------
@@ -34,6 +35,7 @@ CHAT_TOTAL_TIMEOUT_S = float(os.getenv("CHAT_TOTAL_TIMEOUT_S", "180"))
 # App + counters
 # -----------------------------
 app = FastAPI(title="Lab 2 Ingestion + RAG API")
+app.include_router(memory_router)
 
 START = time.time()
 INGEST_COUNT = 0
@@ -98,13 +100,9 @@ async def ingest(article: ArticleIn, request: Request):
     rid = getattr(request.state, "request_id", str(uuid.uuid4()))
 
     try:
-        # Only ingestion needs schema creation; chat does not.
         await asyncio.wait_for(ensure_schema(), timeout=15)
-
-        # Ensure JSON-safe primitives
         doc = article.model_dump(mode="json")
         res = await asyncio.wait_for(insert_doc(doc), timeout=20)
-
         INGEST_COUNT += 1
         return {"status": "ok", "weaviate": res}
 
@@ -170,7 +168,6 @@ async def chat(payload: ChatIn, request: Request):
     try:
         result = await asyncio.wait_for(_chat_impl(payload.message, rid), timeout=CHAT_TOTAL_TIMEOUT_S)
         CHAT_COUNT += 1
-        # Keep /chat clean: only answer + sources
         return {"answer": result["answer"], "sources": result["sources"]}
 
     except asyncio.TimeoutError:
@@ -241,8 +238,12 @@ async def debug_ollama(payload: ChatIn, request: Request):
     """Bypass retrieval and just test generation."""
     require_api_key(request)
     try:
-        # Keep it simple: send the message directly (no sources)
         answer = await asyncio.wait_for(ollama_generate(payload.message), timeout=OLLAMA_TIMEOUT_S)
-        return {"ok": True, "ollama_base_url": os.getenv("OLLAMA_BASE_URL", ""), "ollama_model": os.getenv("OLLAMA_MODEL", ""), "answer": answer}
+        return {
+            "ok": True,
+            "ollama_base_url": os.getenv("OLLAMA_BASE_URL", ""),
+            "ollama_model": os.getenv("OLLAMA_MODEL", ""),
+            "answer": answer,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
