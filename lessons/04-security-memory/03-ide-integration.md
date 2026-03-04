@@ -52,6 +52,8 @@ Then update your `.env`:
 OLLAMA_MODEL=llama3.2:3b
 ```
 
+> **Note:** The Gradio UI at `http://localhost:7860` is for demonstrating the chat/RAG pipeline to end users. The `/memory/query` endpoint is a developer tool — it is meant to be called programmatically or from the terminal as part of the workflow shown in these lessons. To test memory retrieval directly, always use the curl commands in the terminal.
+
 ---
 
 ## 1) What Does "Grounded" Mean and Why Does It Matter?
