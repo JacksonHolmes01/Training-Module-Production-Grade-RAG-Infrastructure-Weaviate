@@ -250,6 +250,21 @@ The memory endpoints contain curated security reference material. Make sure they
 - If you're unsure whether your endpoints are protected, re-read the NGINX config to confirm all `/memory/*` paths require the key
 
 ---
+# Now rebuilt ingestion_api
+```bash
+docker compose up -d --build ingestion-api
+docker cp patches/ingestion-api/app/security_memory ingestion-api:/app/app/security_memory
+docker compose restart ingestion-api
+```
+Run this to test the chat endpoint in terminal:
+```bash
+curl -s -X POST http://localhost:8088/chat -H "Content-Type: application/json" -H "X-API-Key: $EDGE_API_KEY" -d '{"message": "What are the CIS Docker benchmark recommendations for running containers as root?"}' | python -m json.tool
+```
+If chat times out add this to the .env file:
+```bash
+CHAT_TOTAL_TIMEOUT_S=300
+OLLAMA_TIMEOUT_S=240
+```
 
 ## Checkpoint
 
