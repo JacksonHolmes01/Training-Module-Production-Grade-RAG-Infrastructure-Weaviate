@@ -242,7 +242,8 @@ Ingestion completing without error does not guarantee data was stored correctly.
 ### Option 1: Weaviate REST API
 
 ```bash
-curl -sS http://localhost:8080/v1/objects?class=ExpandedVSCodeMemory&limit=1 | python -m json.tool
+EDGE_API_KEY=$(grep -E '^EDGE_API_KEY=' .env | cut -d= -f2-)
+curl -s http://localhost:8088/memory/health -H "X-API-Key: $EDGE_API_KEY" | python -m json.tool
 ```
 
 Or check the class schema exists:
