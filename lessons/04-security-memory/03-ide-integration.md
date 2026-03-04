@@ -54,6 +54,147 @@ OLLAMA_MODEL=llama3.2:3b
 
 > **Note:** The Gradio UI at `http://localhost:7860` is for demonstrating the chat/RAG pipeline to end users. The `/memory/query` endpoint is a developer tool — it is meant to be called programmatically or from the terminal as part of the workflow shown in these lessons. To test memory retrieval directly, always use the curl commands in the terminal.
 
+## If you want gradio to use /memory/query change gradio-ui/app.py to this:
+```
+import os
+import httpx
+import gradio as gr
+
+API_BASE_URL = os.getenv("API_BASE_URL", "http://nginx:8088")
+EDGE_API_KEY = os.getenv("EDGE_API_KEY", "")
+
+
+def call_api(path: str, payload: dict):
+    if not EDGE_API_KEY:
+        return {"error": "EDGE_API_KEY is not set for the UI container."}
+    headers = {"X-API-Key": EDGE_API_KEY}
+    with httpx.Client(timeout=120) as client:
+        r = client.post(f"{API_BASE_URL}{path}", json=payload, headers=headers)
+        r.raise_for_status()
+        return r.json()
+
+
+def chat_fn(message, history):
+    data = call_api("/chat", {"message": message})
+    if "error" in data:
+        return f"Error: {data['error']}"
+    answer = (data.get("answer") or "").strip()
+    sources = data.get("sources") or []
+
+    if sources:
+        answer += "\n\n---\n**Sources (retrieved from Weaviate):**\n"
+        for i, s in enumerate(sources, start=1):
+            title = s.get("title") or "Untitled"
+            url = s.get("url") or ""
+            dist = s.get("distance")
+            answer += f"{i}. {title} — {url} (distance={dist})\n"
+    return answer
+
+
+def memory_query_fn(query, tags_str, top_k):
+    if not query.strip():
+        return "Enter a query above and click Search."
+    tags = [t.strip() for t in tags_str.split(",") if t.strip()] if tags_str.strip() else []
+    payload = {"query": query, "top_k": int(top_k)}
+    if tags:
+        payload["tags"] = tags
+    data = call_api("/memory/query", payload)
+    if "error" in data:
+        return f"Error: {data['error']}"
+    results = data.get("results") or []
+    if not results:
+        return "No results returned. Check that ingestion has run and the collection is populated."
+    output = f"**{len(results)} chunks retrieved from ExpandedVSCodeMemory**\n\n"
+    for i, r in enumerate(results, start=1):
+        score = round(r.get("score", 0), 4)
+        title = r.get("title") or "Untitled"
+        source = r.get("source") or ""
+        tags_out = r.get("tags") or []
+        text = (r.get("text") or "").strip()
+        output += f"---\n**{i}. {title}** | source: `{source}` | tags: `{tags_out}` | score: `{score}`\n\n{text}\n\n"
+    return output
+
+
+def memory_health_fn():
+    if not EDGE_API_KEY:
+        return "UI misconfigured: EDGE_API_KEY is missing."
+    headers = {"X-API-Key": EDGE_API_KEY}
+    try:
+        with httpx.Client(timeout=10) as client:
+            r = client.get(f"{API_BASE_URL}/memory/health", headers=headers)
+            return r.text
+    except Exception as e:
+        return f"Memory health check failed: {e}"
+
+
+def health_text():
+    if not EDGE_API_KEY:
+        return "UI misconfigured: EDGE_API_KEY is missing."
+    headers = {"X-API-Key": EDGE_API_KEY}
+    try:
+        with httpx.Client(timeout=10) as client:
+            r = client.get(f"{API_BASE_URL}/health", headers=headers)
+            return f"{r.status_code}: {r.text}"
+    except Exception as e:
+        return f"Health check failed: {e}"
+
+
+with gr.Blocks(title="Lab 2 — Chat with Weaviate (RAG)") as demo:
+    gr.Markdown(
+        "# Lab 2 — Chat with Your Dataset (RAG)\n"
+        "This UI chats with your dataset using:\n"
+        "- Retrieval from Weaviate\n"
+        "- A local LLM via Ollama\n"
+        "- An API layer behind an authenticated NGINX proxy\n"
+    )
+
+    with gr.Tabs():
+
+        with gr.Tab("Chat"):
+            with gr.Row():
+                with gr.Column(scale=2):
+                    gr.ChatInterface(chat_fn)
+                with gr.Column(scale=1):
+                    gr.Markdown("## System status")
+                    btn = gr.Button("Refresh health")
+                    out = gr.Textbox(label="API /health output", lines=10)
+                    btn.click(fn=health_text, outputs=out)
+
+        with gr.Tab("Security Memory"):
+            gr.Markdown(
+                "## Query Security Memory\n"
+                "Search the `ExpandedVSCodeMemory` collection directly. "
+                "These are the chunks injected into the prompt when you ask a security question in Chat.\n"
+            )
+            with gr.Row():
+                with gr.Column():
+                    mem_query = gr.Textbox(
+                        label="Query",
+                        placeholder="e.g. containers running as root",
+                        lines=2,
+                    )
+                    mem_tags = gr.Textbox(
+                        label="Tags (comma separated, optional)",
+                        placeholder="e.g. cis, docker",
+                    )
+                    mem_topk = gr.Slider(
+                        minimum=1, maximum=10, value=3, step=1, label="Top K"
+                    )
+                    mem_btn = gr.Button("Search Memory")
+                    mem_health_btn = gr.Button("Check Memory Health")
+                    mem_health_out = gr.Textbox(label="Memory health", lines=3)
+                    mem_health_btn.click(fn=memory_health_fn, outputs=mem_health_out)
+
+            mem_results = gr.Markdown(label="Results")
+            mem_btn.click(
+                fn=memory_query_fn,
+                inputs=[mem_query, mem_tags, mem_topk],
+                outputs=mem_results,
+            )
+
+demo.launch(server_name="0.0.0.0", server_port=7860)
+```
+
 ---
 
 ## 1) What Does "Grounded" Mean and Why Does It Matter?
