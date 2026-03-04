@@ -25,7 +25,32 @@ You may be wondering where the chatbot you built in this lab fits in. In this le
 
 Think of it as a division of labour: your API finds the right standards, and the IDE AI uses them to review the code.
 
-If you completed the optional section in Lesson 4.2, your own chatbot can take over the entire workflow. Instead of manually running a curl command and pasting chunks into Copilot, you would just open your chatbot's chat interface at `http://localhost:8088/chat` and ask it to review the file directly. Behind the scenes, your `/chat` endpoint would automatically detect that the question is security-related, call `/memory/query` to fetch the relevant chunks, inject them into the prompt, and send everything to Ollama to generate a grounded response.
+If you completed the optional section in Lesson 4.2, your own chatbot can take over the entire workflow. Instead of manually running a curl command and pasting chunks into Copilot, you would just open your chatbot's chat interface at `http://localhost:7860` and ask it to review the file directly. Behind the scenes, your `/chat` endpoint would automatically detect that the question is security-related, call `/memory/query` to fetch the relevant chunks, inject them into the prompt, and send everything to Ollama to generate a grounded response.
+
+# Chat Pipeline Observations
+
+It is possible that when using the chat endpoint you may get sources from example.org or answers from the sample data rather than recently ingested documents
+
+## Things to Improve
+
+- The sources are coming from the main `LabDoc` collection (sample articles like "Supply Chain Risk"), not from `ExpandedVSCodeMemory` — the memory chunks are being injected into the prompt but the RAG sources shown are from the general collection
+- The answer is vague and generic, which means the security memory chunks either aren't reaching the model effectively or the model (`llama3.2:1b`) is too small to use them well
+
+## Notes
+
+The source display is expected behavior — `/chat` shows sources from the main RAG retrieval, not from the memory injection. The memory chunks are injected silently into the prompt context.
+
+Overall this is working correctly. The quality of the answer is a model size limitation — `llama3.2:1b` is very small. If you want better answers try pulling a larger model:
+
+```bash
+docker exec -i ollama ollama pull llama3.2:3b
+```
+
+Then update your `.env`:
+
+```
+OLLAMA_MODEL=llama3.2:3b
+```
 
 ---
 
