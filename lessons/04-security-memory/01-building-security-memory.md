@@ -171,6 +171,11 @@ At this stage, the security corpus exists on disk inside `security-memory/data/`
 
 This entire pipeline is handled by the ingestion module.
 
+Run thisto apply the additional content to the api:
+```bash
+docker cp patches/ingestion-api/app/security_memory ingestion-api:/app/app/security_memory
+```
+
 ### Why Container Mode Is Recommended
 
 Run ingestion inside the running `ingestion-api` container:
