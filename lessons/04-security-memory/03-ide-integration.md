@@ -55,7 +55,7 @@ OLLAMA_MODEL=llama3.2:3b
 > **Note:** The Gradio UI at `http://localhost:7860` is for demonstrating the chat/RAG pipeline to end users. The `/memory/query` endpoint is a developer tool — it is meant to be called programmatically or from the terminal as part of the workflow shown in these lessons. To test memory retrieval directly, always use the curl commands in the terminal.
 
 ## If you want gradio to use /memory/query change gradio-ui/app.py to this:
-```
+```bash
 import os
 import httpx
 import gradio as gr
@@ -89,6 +89,40 @@ def chat_fn(message, history):
             dist = s.get("distance")
             answer += f"{i}. {title} — {url} (distance={dist})\n"
     return answer
+
+
+def chat_with_followups(message, history):
+    """
+    Extended chat function that returns the answer and extracts
+    follow-up suggestions from the API response.
+    """
+    data = call_api("/chat", {"message": message})
+    if "error" in data:
+        answer = f"Error: {data['error']}"
+        return answer, [], [], []
+
+    answer = (data.get("answer") or "").strip()
+    sources = data.get("sources") or []
+    followups = data.get("followups") or []
+
+    if sources:
+        answer += "\n\n---\n**Sources (retrieved from Weaviate):**\n"
+        for i, s in enumerate(sources, start=1):
+            title = s.get("title") or "Untitled"
+            url = s.get("url") or ""
+            dist = s.get("distance")
+            answer += f"{i}. {title} — {url} (distance={dist})\n"
+
+    # Pad followups to always return 3 values (empty string = hide button)
+    while len(followups) < 3:
+        followups.append("")
+
+    return (
+        answer,
+        gr.update(value=followups[0], visible=bool(followups[0])),
+        gr.update(value=followups[1], visible=bool(followups[1])),
+        gr.update(value=followups[2], visible=bool(followups[2])),
+    )
 
 
 def memory_query_fn(query, tags_str, top_k):
@@ -153,12 +187,72 @@ with gr.Blocks(title="Lab 2 — Chat with Weaviate (RAG)") as demo:
         with gr.Tab("Chat"):
             with gr.Row():
                 with gr.Column(scale=2):
-                    gr.ChatInterface(chat_fn)
+                    chatbot = gr.Chatbot(label="Chat", height=400)
+                    msg_input = gr.Textbox(
+                        label="Your message",
+                        placeholder="Ask a question...",
+                        lines=2,
+                    )
+                    send_btn = gr.Button("Send", variant="primary")
+
+                    gr.Markdown("### Suggested follow-up questions")
+                    with gr.Row():
+                        followup_btn_1 = gr.Button("", visible=False)
+                        followup_btn_2 = gr.Button("", visible=False)
+                        followup_btn_3 = gr.Button("", visible=False)
+
                 with gr.Column(scale=1):
                     gr.Markdown("## System status")
-                    btn = gr.Button("Refresh health")
-                    out = gr.Textbox(label="API /health output", lines=10)
-                    btn.click(fn=health_text, outputs=out)
+                    health_btn = gr.Button("Refresh health")
+                    health_out = gr.Textbox(label="API /health output", lines=10)
+                    health_btn.click(fn=health_text, outputs=health_out)
+
+            # State to hold chat history
+            history_state = gr.State([])
+
+            def handle_message(message, history):
+                if not message.strip():
+                    return history, "", gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                answer, f1, f2, f3 = chat_with_followups(message, history)
+                history = history + [(message, answer)]
+                return history, "", f1, f2, f3
+
+            def use_followup(question, history):
+                if not question:
+                    return history, "", gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                answer, f1, f2, f3 = chat_with_followups(question, history)
+                history = history + [(question, answer)]
+                return history, "", f1, f2, f3
+
+            send_btn.click(
+                fn=handle_message,
+                inputs=[msg_input, history_state],
+                outputs=[chatbot, msg_input, followup_btn_1, followup_btn_2, followup_btn_3],
+            ).then(lambda h: h, inputs=chatbot, outputs=history_state)
+
+            msg_input.submit(
+                fn=handle_message,
+                inputs=[msg_input, history_state],
+                outputs=[chatbot, msg_input, followup_btn_1, followup_btn_2, followup_btn_3],
+            ).then(lambda h: h, inputs=chatbot, outputs=history_state)
+
+            followup_btn_1.click(
+                fn=use_followup,
+                inputs=[followup_btn_1, history_state],
+                outputs=[chatbot, msg_input, followup_btn_1, followup_btn_2, followup_btn_3],
+            ).then(lambda h: h, inputs=chatbot, outputs=history_state)
+
+            followup_btn_2.click(
+                fn=use_followup,
+                inputs=[followup_btn_2, history_state],
+                outputs=[chatbot, msg_input, followup_btn_1, followup_btn_2, followup_btn_3],
+            ).then(lambda h: h, inputs=chatbot, outputs=history_state)
+
+            followup_btn_3.click(
+                fn=use_followup,
+                inputs=[followup_btn_3, history_state],
+                outputs=[chatbot, msg_input, followup_btn_1, followup_btn_2, followup_btn_3],
+            ).then(lambda h: h, inputs=chatbot, outputs=history_state)
 
         with gr.Tab("Security Memory"):
             gr.Markdown(
