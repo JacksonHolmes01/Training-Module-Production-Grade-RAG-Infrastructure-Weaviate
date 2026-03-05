@@ -324,7 +324,117 @@ Replace with:
 
 Once this is in place, the `/chat` response will include a `followups` field — a list of suggested questions. The Gradio UI update in Lesson 4.3 will display these as clickable buttons.
 
-## 6) Security Note: Keep These Endpoints Behind the API Key Gate
+---
+
+**6) — Restrict the assistant to security topics only (optional)**
+
+By default the chatbot answers any question — security questions get memory injection, everything else goes through the normal RAG pipeline. This step adds a hard restriction so non-security questions receive a polite redirect instead of an answer.
+
+This turns the general RAG assistant into a focused security tool. It is a good example of how you scope an AI assistant to a specific domain in production.
+
+Add this function directly below `is_security_related`:
+
+```python
+async def enforce_security_scope(message: str) -> str | None:
+    """
+    If the message is not security-related, return a redirect message.
+    If it is security-related, return None so the chat continues normally.
+    """
+    is_security = await is_security_related(message)
+    if not is_security:
+        return (
+            "This assistant is focused on cybersecurity topics including secure coding, "
+            "infrastructure security, and frameworks such as NIST, CIS, OWASP, and MITRE. "
+            "Your question doesn't appear to be security-related. Please ask a cybersecurity "
+            "question and I'll do my best to help."
+        )
+    return None
+```
+
+Then update `_chat_impl` to call it at the very top, before anything else runs. Find the start of `_chat_impl`:
+
+```python
+async def _chat_impl(
+    message: str,
+    rid: str,
+    ...
+):
+    t0 = time.time()
+
+    # 0) Security memory injection
+    if await is_security_related(message):
+```
+
+Replace the security memory injection block with this:
+
+```python
+async def _chat_impl(
+    message: str,
+    rid: str,
+    ...
+):
+    t0 = time.time()
+
+    # 0) Scope enforcement — redirect non-security questions
+    redirect = await enforce_security_scope(message)
+    if redirect:
+        return {
+            "answer": redirect,
+            "sources": [],
+            "followups": [],
+            "_timing_ms": {"retrieve": 0, "prompt": 0, "generate": 0, "total": 0},
+            "_prompt_chars": 0,
+        }
+
+    # 1) Security memory injection
+    memory_context = await get_memory_context(message)
+```
+
+Notice that because `enforce_security_scope` already calls `is_security_related` internally, you no longer need the separate `if await is_security_related` check — if execution reaches step 1, the message is already confirmed as security-related so you can call `get_memory_context` directly.
+
+### Testing it
+
+Rebuild and restart after making the change:
+
+```bash
+docker compose up -d --build ingestion-api
+docker cp patches/ingestion-api/app/security_memory ingestion-api:/app/app/security_memory
+docker compose restart ingestion-api
+```
+
+Test with a non-security question:
+
+```bash
+curl -s -X POST http://localhost:8088/chat \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $EDGE_API_KEY" \
+  -d '{"message": "What is the capital of France?"}' \
+  | python -m json.tool
+```
+
+Expected response:
+
+```json
+{
+  "answer": "This assistant is focused on cybersecurity topics...",
+  "sources": [],
+  "followups": []
+}
+```
+
+Test with a security question to confirm it still works normally:
+
+```bash
+curl -s -X POST http://localhost:8088/chat \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: $EDGE_API_KEY" \
+  -d '{"message": "What does OWASP say about broken access control?"}' \
+  | python -m json.tool
+```
+
+> **Note:** This step reuses the same Ollama classifier from Step 1, so there is no additional model or service required. The only trade-off is one extra Ollama round trip per message to run the classification — on a small model like `llama3.2:1b` this adds roughly 5-10 seconds per request.
+
+## 7) Security Note: Keep These Endpoints Behind the API Key Gate
 
 The memory endpoints contain curated security reference material. Make sure they follow the same auth rules as the rest of the API:
 
