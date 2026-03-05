@@ -241,7 +241,90 @@ The rest of `_chat_impl` — the Ollama call, the timing, and the response shape
 
 ---
 
-## 5) Security Note: Keep These Endpoints Behind the API Key Gate
+---
+
+**5) — Add follow-up question suggestions (optional)**
+
+This step adds a second Ollama call after the answer is generated. It looks at the question and answer and suggests 2-3 relevant follow-up questions the user might want to ask next. These are returned alongside the answer and displayed as clickable buttons in the Gradio UI.
+
+Add this function directly below `get_memory_context`:
+
+```python
+async def get_followup_suggestions(message: str, answer: str) -> list:
+    """
+    Asks Ollama to suggest 2-3 follow-up questions based on the question and answer.
+    Returns a list of question strings, or an empty list if it fails.
+    """
+    prompt = (
+        "Based on this question and answer, suggest 2-3 short follow-up questions "
+        "the user might want to ask next. Return only the questions as a JSON array "
+        "of strings with no extra text, no explanation, and no markdown.\n\n"
+        f"Question: {message}\n\nAnswer: {answer}"
+    )
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            r = await client.post(
+                f"{OLLAMA_BASE_URL}/api/generate",
+                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False}
+            )
+            r.raise_for_status()
+            response = (r.json().get("response") or "").strip()
+            return json.loads(response)
+    except Exception:
+        return []
+```
+
+Make sure `import json` is at the top of `main.py` with the other imports.
+
+Then update `_chat_impl` to call it after the answer is generated. Find the return block at the bottom of `_chat_impl`:
+
+```python
+    return {
+        "answer": answer,
+        "sources": sources,
+        ...
+    }
+```
+
+Replace it with:
+
+```python
+    # 4) Follow-up suggestions
+    followups = await get_followup_suggestions(message, answer)
+
+    return {
+        "answer": answer,
+        "sources": sources,
+        "followups": followups,
+        "_timing_ms": {
+            "retrieve": round(t_retr, 1),
+            "prompt": round(t_pr, 1),
+            "generate": round(t_llm, 1),
+            "total": round(total, 1),
+        },
+        "_prompt_chars": len(prompt),
+    }
+```
+
+Also update the `/chat` endpoint to pass `followups` through to the response. Find:
+
+```python
+        return {"answer": result["answer"], "sources": result["sources"]}
+```
+
+Replace with:
+
+```python
+        return {
+            "answer": result["answer"],
+            "sources": result["sources"],
+            "followups": result.get("followups", []),
+        }
+```
+
+Once this is in place, the `/chat` response will include a `followups` field — a list of suggested questions. The Gradio UI update in Lesson 4.3 will display these as clickable buttons.
+
+## 6) Security Note: Keep These Endpoints Behind the API Key Gate
 
 The memory endpoints contain curated security reference material. Make sure they follow the same auth rules as the rest of the API:
 
