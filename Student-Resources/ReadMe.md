@@ -25,6 +25,13 @@ To listen or download a podcast episode:
 
 ---
 
+## Presentation Deck
+
+| File | Description |
+|---|---|
+| [Weaviate-Lesson-Quiz.md](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/48de31d4d07bf4cebf3b94b15873a161676d2240/Student-Resources/Weaviate-Lesson-Quiz.md) | Lesson Quiz covering the full lab |
+
+
 ## Overview
 
 | File | Description |
