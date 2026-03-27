@@ -558,3 +558,6 @@ You are done when you can:
 ---
 
 [← Lesson 2](02-security-tool-api.md)
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
