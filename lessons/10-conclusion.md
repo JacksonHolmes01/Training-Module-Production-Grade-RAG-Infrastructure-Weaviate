@@ -281,3 +281,7 @@ You now understand:
 - Retrieval grounding discipline
 
 [Advanced ReadME](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/Advanced-ReadME.md)
+
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
