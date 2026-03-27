@@ -294,3 +294,6 @@ If retrieval and prompt work but generation is slow, the issue is almost always 
 - `./bin/smoke_test.sh` completes successfully.
 
 [Lesson 7](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/07-rag-retrieval-and-ollama.md)
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
