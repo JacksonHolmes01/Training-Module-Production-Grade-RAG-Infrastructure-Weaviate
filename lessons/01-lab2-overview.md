@@ -136,3 +136,6 @@ At the end of Lab 2, you should be able to:
 - You can draw the RAG flow: UI → NGINX → API → (Weaviate retrieval) → (Ollama generation) → UI.
 
 [Lesson 2](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/02-prereqs-and-setup.md)
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
