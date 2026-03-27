@@ -196,3 +196,7 @@ To delete the class and start fresh (e.g., after changing the embedding model):
 ```bash
 curl -X DELETE http://localhost:8080/v1/schema/ExpandedVSCodeMemory
 ```
+
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
