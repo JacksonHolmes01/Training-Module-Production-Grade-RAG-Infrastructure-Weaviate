@@ -110,3 +110,6 @@ If needed, pull the model again:
 - You can explain the request path in one sentence
 
 [Lesson 9](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/09-operations-testing-and-troubleshooting.md)
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
