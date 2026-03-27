@@ -470,3 +470,6 @@ You're done when all of the following are true:
 ---
 
 [← Lesson 1](01-building-security-memory.md) | [Lesson 3 →](03-ide-integration.md)
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
