@@ -14,3 +14,7 @@ Follow lessons in order. Each lesson explains **what you are building**, **why i
 10. [Lesson 10 - Conclusion](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/10-Conclusion.md) 
 
 **Dataset:** `data/sample_articles.jsonl` (cybersecurity-focused) ingested via `./bin/ingest_sample.sh`.
+
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
