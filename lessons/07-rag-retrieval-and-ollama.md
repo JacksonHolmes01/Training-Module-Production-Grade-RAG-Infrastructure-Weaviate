@@ -750,3 +750,6 @@ docker compose logs ollama --tail=200
 - You changed `RAG_TOP_K` and observed a measurable difference in outputs.
 
 [Lesson 8](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/08-gradio-chat-ui.md)
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
