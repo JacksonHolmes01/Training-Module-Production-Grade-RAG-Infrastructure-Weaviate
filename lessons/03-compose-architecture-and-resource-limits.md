@@ -311,3 +311,6 @@ docker stats
 - You can explain what `docker stats` shows in one sentence.
 
 [Lesson 4](https://github.com/JacksonHolmes01/Training-Module-Production-Grade-RAG-Infrastructure-Weaviate/blob/main/lessons/04-edge-auth-with-nginx.md)
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
