@@ -163,3 +163,6 @@ http://localhost:7860
 If everything is working, you should be able to ask cybersecurity-related questions and receive answers with sources.
 
 ---
+
+---
+*License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) — Jackson Holmes*
