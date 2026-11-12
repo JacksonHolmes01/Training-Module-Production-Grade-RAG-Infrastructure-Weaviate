@@ -9,10 +9,15 @@ def call_api(path: str, payload: dict):
     if not EDGE_API_KEY:
         return {"error": "EDGE_API_KEY is not set for the UI container."}
     headers = {"X-API-Key": EDGE_API_KEY}
-    with httpx.Client(timeout=120) as client:
-        r = client.post(f"{API_BASE_URL}{path}", json=payload, headers=headers)
-        r.raise_for_status()
-        return r.json()
+    try:
+        with httpx.Client(timeout=120) as client:
+            r = client.post(f"{API_BASE_URL}{path}", json=payload, headers=headers)
+            r.raise_for_status()
+            return r.json()
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP {e.response.status_code} from API: {e.response.text[:300]}"}
+    except Exception as e:
+        return {"error": f"UI -> API call failed: {type(e).__name__}: {e}"}
 
 def chat_fn(message, history):
     data = call_api("/chat", {"message": message})
@@ -52,7 +57,7 @@ with gr.Blocks(title="Lab 2 — Chat with Weaviate (RAG)") as demo:
 
     with gr.Row():
         with gr.Column(scale=2):
-            gr.ChatInterface(chat_fn)
+            gr.ChatInterface(chat_fn, type="messages")
         with gr.Column(scale=1):
             gr.Markdown("## System status")
             btn = gr.Button("Refresh health")
