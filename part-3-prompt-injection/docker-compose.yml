@@ -1,0 +1,186 @@
+# Fixed project name, so this lab's containers, volumes, and networks
+# never collide with another lab that uses the same folder name.
+name: secure-ai-weaviate-part3
+
+services:
+  # -------------------------------------------------------------------
+  # Weaviate: the knowledge store
+  # Internal only: no ports are published to your computer.
+  # Every request needs an API key; roles decide what each key may do.
+  # -------------------------------------------------------------------
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.40.4
+    container_name: rag-weaviate
+    restart: unless-stopped
+    mem_limit: 2g
+    cpus: 2.0
+    pids_limit: 256
+    # Weaviate only reads API keys from an environment variable. Setting that
+    # variable here would show every key in `docker inspect`. Instead, this
+    # wrapper reads the keys from a secret file at startup, then starts Weaviate.
+    entrypoint: ["/bin/sh", "-c", "AUTHENTICATION_APIKEY_ALLOWED_KEYS=\"$$(cat /run/secrets/weaviate_keys)\" exec /bin/weaviate \"$$@\"", "--"]
+    command: ["--host", "0.0.0.0", "--port", "8080", "--scheme", "http"]
+    environment:
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "false"
+      AUTHENTICATION_APIKEY_ENABLED: "true"
+      # User names are not secret. Keys are matched to them by position.
+      AUTHENTICATION_APIKEY_USERS: "admin,rag-writer,rag-reader"
+      AUTHORIZATION_RBAC_ENABLED: "true"
+      AUTHORIZATION_RBAC_ROOT_USERS: "admin"
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      DEFAULT_VECTORIZER_MODULE: "none"
+      CLUSTER_HOSTNAME: "node1"
+      DISABLE_TELEMETRY: "true"
+    secrets:
+      - weaviate_keys
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/v1/.well-known/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - internal
+
+  # -------------------------------------------------------------------
+  # weaviate-init: runs once with the ADMIN key to create the collection,
+  # the tenant, and the roles, then exits. Nothing that keeps running
+  # ever holds the admin key.
+  # -------------------------------------------------------------------
+  weaviate-init:
+    build:
+      context: ./ingestion-api
+    container_name: rag-weaviate-init
+    restart: "no"
+    command: ["python", "-m", "app.weaviate_init"]
+    environment:
+      WEAVIATE_URL: "http://weaviate:8080"
+      APP_TENANT: "${APP_TENANT:-lab}"
+    secrets:
+      - weaviate_admin_key
+    depends_on:
+      weaviate:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # -------------------------------------------------------------------
+  # Ollama: local LLM + embedding model
+  # -------------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:0.40.6
+    container_name: rag-ollama
+    restart: unless-stopped
+    mem_limit: 6g
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - internal
+
+  # -------------------------------------------------------------------
+  # Ingestion + RAG API (FastAPI)
+  # -------------------------------------------------------------------
+  ingestion-api:
+    build:
+      context: ./ingestion-api
+    container_name: rag-api
+    restart: unless-stopped
+    mem_limit: 1g
+    environment:
+      EDGE_API_KEY: "${EDGE_API_KEY:?Run bin/setup_secrets.sh first}"
+      APP_TENANT: "${APP_TENANT:-lab}"
+      WEAVIATE_URL: "http://weaviate:8080"
+      OLLAMA_BASE_URL: "http://ollama:11434"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-llama3.2:1b}"
+      OLLAMA_EMBED_MODEL: "${OLLAMA_EMBED_MODEL:-nomic-embed-text}"
+      EMBED_DIM: "${EMBED_DIM:-768}"
+      RAG_TOP_K: "${RAG_TOP_K:-4}"
+      RAG_MAX_SOURCE_CHARS: "${RAG_MAX_SOURCE_CHARS:-1200}"
+      ENABLE_DEBUG_ENDPOINTS: "${ENABLE_DEBUG_ENDPOINTS:-true}"
+      OLLAMA_TEMPERATURE: "${OLLAMA_TEMPERATURE:-0}"
+      # Prompt injection defenses (Part 3). All start OFF.
+      GUARD_INPUT: "${GUARD_INPUT:-false}"
+      GUARD_INGEST: "${GUARD_INGEST:-false}"
+      GUARD_PROMPT: "${GUARD_PROMPT:-false}"
+      PROMPT_SANITIZE: "${PROMPT_SANITIZE:-true}"
+      GUARD_OUTPUT: "${GUARD_OUTPUT:-false}"
+      ALLOWED_LINK_DOMAINS: "${ALLOWED_LINK_DOMAINS:-example.org}"
+    secrets:
+      - weaviate_writer_key
+      - weaviate_reader_key
+    depends_on:
+      weaviate-init:
+        condition: service_completed_successfully
+      ollama:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - internal
+
+  # -------------------------------------------------------------------
+  # NGINX edge gateway: the only way into the API
+  # -------------------------------------------------------------------
+  nginx:
+    image: nginx:1.28-alpine
+    container_name: rag-nginx
+    restart: unless-stopped
+    mem_limit: 128m
+    ports:
+      - "127.0.0.1:8088:8088"
+    environment:
+      EDGE_API_KEY: "${EDGE_API_KEY:?Run bin/setup_secrets.sh first}"
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+    depends_on:
+      ingestion-api:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # -------------------------------------------------------------------
+  # Gradio chat UI
+  # -------------------------------------------------------------------
+  gradio-ui:
+    build:
+      context: ./gradio-ui
+    container_name: rag-ui
+    restart: unless-stopped
+    mem_limit: 512m
+    ports:
+      - "127.0.0.1:7860:7860"
+    environment:
+      API_BASE_URL: "http://nginx:8088"
+      EDGE_API_KEY: "${EDGE_API_KEY:?Run bin/setup_secrets.sh first}"
+      GRADIO_HTTP_TIMEOUT_S: "${GRADIO_HTTP_TIMEOUT_S:-600}"
+    depends_on:
+      nginx:
+        condition: service_started
+    networks:
+      - internal
+
+secrets:
+  weaviate_keys:
+    file: ./secrets/weaviate_keys.txt
+  weaviate_admin_key:
+    file: ./secrets/weaviate_admin_key.txt
+  weaviate_writer_key:
+    file: ./secrets/weaviate_writer_key.txt
+  weaviate_reader_key:
+    file: ./secrets/weaviate_reader_key.txt
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  weaviate_data:
+  # Parts 3, 4, and 5 share one model volume, so models download only once.
+  # bin/setup_secrets.sh creates this volume if it does not exist yet.
+  ollama_data:
+    name: secure-ai-weaviate_ollama_data
+    external: true

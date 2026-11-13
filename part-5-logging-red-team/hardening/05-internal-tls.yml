@@ -1,0 +1,40 @@
+# Layer 5: encrypt and verify traffic between the API and Weaviate (Lesson 9).
+# Weaviate serves HTTPS with a certificate signed by the lab's own certificate
+# authority (CA). The API and weaviate-init trust ONLY that CA, so they refuse
+# any server that cannot prove it is "weaviate".
+services:
+  weaviate:
+    # Same port, HTTPS only: there is no plain-HTTP listener left
+    command: ["--host", "0.0.0.0", "--scheme", "https", "--tls-host", "0.0.0.0", "--tls-port", "8080",
+              "--tls-certificate", "/run/secrets/weaviate_server_crt", "--tls-key", "/run/secrets/weaviate_server_key"]
+    secrets:
+      - weaviate_keys
+      - weaviate_server_crt
+      - weaviate_server_key
+    healthcheck:
+      # The health check runs inside the container itself, so it skips the
+      # certificate check; it only asks "is Weaviate ready?"
+      test: ["CMD", "wget", "-q", "--spider", "--no-check-certificate", "https://127.0.0.1:8080/v1/.well-known/ready"]
+
+  weaviate-init:
+    environment:
+      WEAVIATE_URL: "https://weaviate:8080"
+      WEAVIATE_CA_CERT: /run/secrets/tls_ca_crt
+    secrets:
+      - weaviate_admin_key
+      - tls_ca_crt
+
+  ingestion-api:
+    environment:
+      WEAVIATE_URL: "https://weaviate:8080"
+      WEAVIATE_CA_CERT: /run/secrets/tls_ca_crt
+    secrets:
+      - tls_ca_crt
+
+secrets:
+  weaviate_server_crt:
+    file: ./secrets/weaviate_server.crt
+  weaviate_server_key:
+    file: ./secrets/weaviate_server.key
+  tls_ca_crt:
+    file: ./secrets/tls_ca.crt

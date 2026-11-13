@@ -233,6 +233,20 @@ This lab is designed not just to teach how to run a RAG system, but how to reaso
 - Operational behavior
 - Production tradeoffs
 
+# Continue the Series: Attack, Harden, and Monitor This Chatbot
+
+Once Lab 2 works, three more parts take the same Weaviate chatbot and make it secure. Each part is its own folder with its own copy of the stack, so you can start any of them fresh.
+
+| Part | Folder | What you do |
+|---|---|---|
+| 3 | [part-3-prompt-injection](part-3-prompt-injection/README.md) | Lock Weaviate down (API keys, an admin key nothing running holds, and roles that limit each key to one tenant and one kind of action), attack the chatbot eight ways with prompt injection, then add and measure four layers of defense |
+| 4 | [part-4-container-hardening](part-4-container-hardening/README.md) | Audit every container, play the attacker inside one, then add six hardening layers (non-root, no capabilities, read-only, secrets out of env vars, internal TLS, scanned and pinned images) and re-measure after each |
+| 5 | [part-5-logging-red-team](part-5-logging-red-team/README.md) | Structured logs, detection rules (including Weaviate's own access-control log), a scripted 12-step red-team campaign against your own lab, detection coverage scoring, and a findings report |
+
+Do them in order, after Lab 2.
+
+---
+
 # Once you've finished the Lab
 
 Expand the capabilities of your chatbot and it's cybersecurity functionality below:

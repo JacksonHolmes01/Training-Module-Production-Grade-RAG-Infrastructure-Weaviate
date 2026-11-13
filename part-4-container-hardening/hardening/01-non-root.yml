@@ -1,0 +1,53 @@
+# Layer 1: run every container as an unprivileged user (Lesson 5).
+services:
+  # The data folder was created by the root-running Weaviate in Part 3, so it
+  # belongs to root. This one-shot container hands it to user 10001, then
+  # exits. It is the ONLY thing that runs as root, it holds exactly the
+  # capabilities it needs to change ownership, and it has no network.
+  weaviate-perms:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.40.4
+    container_name: rag-weaviate-perms
+    restart: "no"
+    user: "0:0"
+    entrypoint: ["sh", "-c", "chown -R 10001:10001 /var/lib/weaviate && echo 'weaviate data folder now owned by 10001'"]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_READ_SEARCH, FOWNER]
+    security_opt: ["no-new-privileges:true"]
+    network_mode: none
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+
+  weaviate:
+    user: "10001:10001"
+    depends_on:
+      weaviate-perms:
+        condition: service_completed_successfully
+
+  weaviate-init:
+    user: "10001:10001"
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+
+  ollama:
+    user: "10001:10001"
+    environment:
+      HOME: /tmp
+      OLLAMA_MODELS: /ollama/models
+    # Models are mounted READ-ONLY: nothing in this container can replace them
+    volumes: !override
+      - ollama_data:/ollama:ro
+
+  ingestion-api:
+    user: "10001:10001"
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+
+  nginx:
+    # The official NGINX image starts as root; this variant never does
+    image: nginxinc/nginx-unprivileged:1.28.2-alpine
+
+  gradio-ui:
+    user: "10001:10001"
+    environment:
+      HOME: /tmp
+      PYTHONDONTWRITEBYTECODE: "1"
